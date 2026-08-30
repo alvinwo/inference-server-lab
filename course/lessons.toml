@@ -1,0 +1,83 @@
+[[lessons]]
+number = "01"
+slug = "tensors-devices"
+title = "Tensors, devices, and trustworthy timing"
+status = "planned"
+
+[[lessons]]
+number = "02"
+slug = "tiny-transformer"
+title = "A tiny decoder-only Transformer"
+status = "planned"
+
+[[lessons]]
+number = "03"
+slug = "generation-sampling"
+title = "Autoregressive generation and sampling"
+status = "planned"
+
+[[lessons]]
+number = "04"
+slug = "model-adapters"
+title = "Model adapters and real weights"
+status = "planned"
+
+[[lessons]]
+number = "05"
+slug = "naive-server"
+title = "Prefill, decode, and the naive HTTP server"
+status = "planned"
+
+[[lessons]]
+number = "06"
+slug = "streaming-lifecycle"
+title = "Request lifecycle, streaming, and cancellation"
+status = "planned"
+
+[[lessons]]
+number = "07"
+slug = "serving-benchmarks"
+title = "Serving benchmarks and profiler literacy"
+status = "planned"
+
+[[lessons]]
+number = "08"
+slug = "kv-cache"
+title = "Per-request KV cache"
+status = "planned"
+
+[[lessons]]
+number = "09"
+slug = "padded-batching"
+title = "Padded batching"
+status = "planned"
+
+[[lessons]]
+number = "10"
+slug = "continuous-batching"
+title = "Continuous batching and token-budget scheduling"
+status = "planned"
+
+[[lessons]]
+number = "11"
+slug = "block-kv-memory"
+title = "Block-based KV memory management"
+status = "planned"
+
+[[lessons]]
+number = "12"
+slug = "openai-api"
+title = "OpenAI-compatible API subset"
+status = "planned"
+
+[[lessons]]
+number = "13"
+slug = "observability"
+title = "Observability and operational safety"
+status = "planned"
+
+[[lessons]]
+number = "14"
+slug = "load-resilience"
+title = "Load, resilience, and graduation benchmark"
+status = "planned"
