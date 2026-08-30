@@ -1,0 +1,3 @@
+expected_starter_failures = [
+  "tests/test_challenge.py::test_implementation_returns_ready",
+]

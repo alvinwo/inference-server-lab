@@ -57,7 +57,16 @@ def run_tests(project_root: Path, lesson: Lesson, implementation_root: Path) -> 
         environment = _environment(project_root, implementation_root)
         environment["INFERENCE_LAB_PYTEST_REPORT"] = str(report_path)
         result = subprocess.run(
-            [sys.executable, "-m", "pytest", "tests", "-q", "-p", "course.pytest_reporter"],
+            [
+                sys.executable,
+                "-m",
+                "pytest",
+                "tests",
+                "-q",
+                "--rootdir=.",
+                "-p",
+                "course.pytest_reporter",
+            ],
             cwd=lesson.path,
             env=environment,
             capture_output=True,
