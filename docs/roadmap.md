@@ -2,10 +2,13 @@
 
 Status describes repository delivery, not a promised date.
 
-## Milestone 0 — Project skeleton (`planned`)
+## Milestone 0 — Project skeleton (`complete`)
 
 Repository metadata, package layout, course CLI, tiny fixtures, CI, documentation foundation, and
 checkpoint verification.
+
+Milestone 1 begins by publishing Lesson 1. It must preserve the established learner workspace and
+checkpoint contracts unless an architecture decision record explains and tests a change.
 
 ## Milestone 1 — Foundations (`planned`)
 

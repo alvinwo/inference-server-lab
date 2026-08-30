@@ -66,12 +66,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"Archived {lesson.lesson_id} to {_display_path(archived)}")
             return 0
         if args.command == "test":
-            test_result = run_tests(PROJECT_ROOT, lesson, manager._destination(lesson))
+            test_result = run_tests(PROJECT_ROOT, lesson, manager.workspace_path(lesson))
             print(test_result.stdout, end="")
             print(test_result.stderr, end="", file=sys.stderr)
             return test_result.returncode
         if args.command == "benchmark":
-            benchmark_result = run_benchmark(PROJECT_ROOT, lesson, manager._destination(lesson))
+            benchmark_result = run_benchmark(PROJECT_ROOT, lesson, manager.workspace_path(lesson))
             print(benchmark_result.stdout, end="")
             print(benchmark_result.stderr, end="", file=sys.stderr)
             return benchmark_result.returncode

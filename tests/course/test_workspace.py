@@ -65,3 +65,12 @@ def test_archive_refuses_when_no_workspace_exists(tmp_path: Path) -> None:
     manager = WorkspaceManager(tmp_path, work_root=tmp_path / "work")
     with pytest.raises(CourseError, match="No active workspace"):
         manager.archive(lesson, timestamp="20260829T120000Z")
+
+
+def test_archive_rejects_a_timestamp_that_escapes_trash(tmp_path: Path) -> None:
+    lesson = published_lesson(tmp_path)
+    manager = WorkspaceManager(tmp_path)
+    active = manager.start(lesson)
+    with pytest.raises(CourseError, match="Unsafe workspace archive path"):
+        manager.archive(lesson, timestamp="../../outside")
+    assert active.is_dir()

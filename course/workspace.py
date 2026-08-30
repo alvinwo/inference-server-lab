@@ -12,7 +12,7 @@ class WorkspaceManager:
         selected_work_root = work_root if work_root is not None else self.project_root / "work"
         self.work_root = selected_work_root.resolve()
 
-    def _destination(self, lesson: Lesson) -> Path:
+    def workspace_path(self, lesson: Lesson) -> Path:
         destination = (self.work_root / lesson.lesson_id).resolve()
         if destination.parent != self.work_root:
             raise CourseError(f"Unsafe workspace path for lesson '{lesson.lesson_id}'")
@@ -24,7 +24,7 @@ class WorkspaceManager:
         starter = lesson.path.resolve() / "starter"
         if not starter.is_dir():
             raise CourseError(f"Lesson '{lesson.lesson_id}' has no starter")
-        destination = self._destination(lesson)
+        destination = self.workspace_path(lesson)
         if destination.exists():
             raise CourseError(f"Workspace '{destination}' already exists")
         self.work_root.mkdir(parents=True, exist_ok=True)
@@ -32,7 +32,7 @@ class WorkspaceManager:
         return destination
 
     def archive(self, lesson: Lesson, timestamp: str | None = None) -> Path:
-        active = self._destination(lesson)
+        active = self.workspace_path(lesson)
         if not active.is_dir():
             raise CourseError(f"No active workspace for lesson '{lesson.lesson_id}'")
 
@@ -41,8 +41,12 @@ class WorkspaceManager:
             raise CourseError("Unsafe workspace archive path")
         trash.mkdir(parents=True, exist_ok=True)
         archive_time = timestamp or datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+        if Path(archive_time).name != archive_time or archive_time in {".", ".."}:
+            raise CourseError("Unsafe workspace archive path")
         base_name = f"{lesson.lesson_id}-{archive_time}"
-        archived = trash / base_name
+        archived = (trash / base_name).resolve()
+        if archived.parent != trash:
+            raise CourseError("Unsafe workspace archive path")
         suffix = 2
         while archived.exists():
             archived = trash / f"{base_name}-{suffix}"

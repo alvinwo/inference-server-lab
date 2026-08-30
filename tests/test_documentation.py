@@ -65,3 +65,13 @@ def test_ci_and_contribution_templates_exist(project_root: Path) -> None:
         "uv run python scripts/verify_checkpoints.py",
     ):
         assert command in workflow
+
+
+def test_milestone_zero_has_a_completion_record(project_root: Path) -> None:
+    roadmap = (project_root / "docs" / "roadmap.md").read_text()
+    record = project_root / "docs" / "milestones" / "00-foundation.md"
+    assert "Milestone 0 — Project skeleton (`complete`)" in roadmap
+    assert record.is_file()
+    record_text = record.read_text()
+    assert "3ca476a3151a31560c76c3a8f7633e4553481e6d" in record_text
+    assert "37 passed" in record_text
