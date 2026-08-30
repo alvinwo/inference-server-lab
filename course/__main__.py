@@ -4,7 +4,9 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from course.catalog import find_lesson, load_catalog
+from course.checkpoints import verify_checkpoint
 from course.errors import CourseError
+from course.runner import run_benchmark, run_tests
 from course.workspace import WorkspaceManager
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -24,6 +26,14 @@ def _parser() -> argparse.ArgumentParser:
     reset = commands.add_parser("reset", help="Archive an active lesson workspace.")
     reset.add_argument("lesson")
     reset.add_argument("--yes", action="store_true", help="Confirm the recoverable reset.")
+
+    for name, help_text in (
+        ("test", "Run a lesson's tests against your workspace."),
+        ("benchmark", "Run a lesson's benchmark against your workspace."),
+        ("verify", "Verify a lesson's starter and solution contract."),
+    ):
+        command = commands.add_parser(name, help=help_text)
+        command.add_argument("lesson")
     return parser
 
 
@@ -54,6 +64,22 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.command == "reset":
             archived = manager.archive(lesson)
             print(f"Archived {lesson.lesson_id} to {_display_path(archived)}")
+            return 0
+        if args.command == "test":
+            test_result = run_tests(PROJECT_ROOT, lesson, manager._destination(lesson))
+            print(test_result.stdout, end="")
+            print(test_result.stderr, end="", file=sys.stderr)
+            return test_result.returncode
+        if args.command == "benchmark":
+            benchmark_result = run_benchmark(
+                PROJECT_ROOT, lesson, manager._destination(lesson)
+            )
+            print(benchmark_result.stdout, end="")
+            print(benchmark_result.stderr, end="", file=sys.stderr)
+            return benchmark_result.returncode
+        if args.command == "verify":
+            report = verify_checkpoint(PROJECT_ROOT, lesson)
+            print(f"{report.lesson_id}: starter state expected; solution passes")
             return 0
         raise CourseError(f"Unsupported command '{args.command}'")
     except CourseError as error:
