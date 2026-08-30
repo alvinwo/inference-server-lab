@@ -10,7 +10,8 @@ dist/
 build/
 *.egg-info/
 .superpowers/
+.worktrees/
+.mypy_cache/
 work/
 benchmark-results/
 model-cache/
-
