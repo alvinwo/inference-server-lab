@@ -40,9 +40,7 @@ def test_find_lesson_rejects_unknown_id(project_root: Path) -> None:
         ),
     ],
 )
-def test_catalog_rejects_invalid_entries(
-    tmp_path: Path, catalog_text: str, message: str
-) -> None:
+def test_catalog_rejects_invalid_entries(tmp_path: Path, catalog_text: str, message: str) -> None:
     course_dir = tmp_path / "course"
     course_dir.mkdir()
     (course_dir / "lessons.toml").write_text(catalog_text)

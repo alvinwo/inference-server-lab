@@ -20,17 +20,14 @@ def test_reset_requires_explicit_confirmation(capsys) -> None:
     assert "Refusing reset without --yes" in capsys.readouterr().err
 
 
-def test_start_and_reset_archive_workspace(
-    tmp_path: Path, monkeypatch, capsys
-) -> None:
+def test_start_and_reset_archive_workspace(tmp_path: Path, monkeypatch, capsys) -> None:
     course_dir = tmp_path / "course"
     starter = tmp_path / "lessons" / "01-example" / "starter"
     course_dir.mkdir()
     starter.mkdir(parents=True)
     (starter / "answer.py").write_text("VALUE = 1\n")
     (course_dir / "lessons.toml").write_text(
-        "[[lessons]]\n"
-        'number = "01"\nslug = "example"\ntitle = "Example"\nstatus = "published"\n'
+        '[[lessons]]\nnumber = "01"\nslug = "example"\ntitle = "Example"\nstatus = "published"\n'
     )
     monkeypatch.setattr(cli, "PROJECT_ROOT", tmp_path)
 

@@ -48,9 +48,7 @@ def load_catalog(project_root: Path) -> tuple[Lesson, ...]:
             raise CourseError(f"Duplicate lesson ID '{lesson_id}'")
         numbers.add(number)
         lesson_ids.add(lesson_id)
-        lessons.append(
-            Lesson(number, slug, title, status, project_root / "lessons" / lesson_id)
-        )
+        lessons.append(Lesson(number, slug, title, status, project_root / "lessons" / lesson_id))
     return tuple(lessons)
 
 

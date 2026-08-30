@@ -1,0 +1,68 @@
+name: Bug report
+description: Report a reproducible problem in the course, tooling, or engine.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for helping improve the lab. Remove secrets and private model data from logs.
+  - type: input
+    id: lesson
+    attributes:
+      label: Lesson ID
+      placeholder: 08-kv-cache, course tooling, or final engine
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system and version
+    validations:
+      required: true
+  - type: input
+    id: architecture
+    attributes:
+      label: Computer architecture
+      placeholder: Apple Silicon arm64, Intel x86_64, or other
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Python and PyTorch versions
+      placeholder: Python 3.12.11, PyTorch 2.13.0
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device selected by the lesson
+      placeholder: cpu, mps, or cuda
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Command and reproduction steps
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Minimal logs with secrets removed
+      render: shell
+    validations:
+      required: true

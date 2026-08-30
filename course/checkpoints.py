@@ -38,9 +38,7 @@ def verify_checkpoint(project_root: Path, lesson: Lesson) -> CheckpointReport:
     expected = _expected_failures(lesson)
     starter = run_tests(project_root, lesson, lesson.path / "starter")
     if starter.returncode not in ({0} if not expected else {1}):
-        raise CourseError(
-            f"Starter tests could not be verified (pytest exit {starter.returncode})"
-        )
+        raise CourseError(f"Starter tests could not be verified (pytest exit {starter.returncode})")
     if starter.failed_node_ids != expected:
         raise CourseError(
             "Starter failure mismatch: "

@@ -71,9 +71,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(test_result.stderr, end="", file=sys.stderr)
             return test_result.returncode
         if args.command == "benchmark":
-            benchmark_result = run_benchmark(
-                PROJECT_ROOT, lesson, manager._destination(lesson)
-            )
+            benchmark_result = run_benchmark(PROJECT_ROOT, lesson, manager._destination(lesson))
             print(benchmark_result.stdout, end="")
             print(benchmark_result.stderr, end="", file=sys.stderr)
             return benchmark_result.returncode

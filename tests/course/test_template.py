@@ -20,15 +20,11 @@ def test_author_template_has_expected_starter_and_passing_solution(
     assert report.solution_passed is True
 
 
-def test_template_supports_the_complete_learner_flow(
-    project_root: Path, tmp_path: Path
-) -> None:
+def test_template_supports_the_complete_learner_flow(project_root: Path, tmp_path: Path) -> None:
     template = project_root / "lessons" / "_template"
     lesson_path = tmp_path / "lessons" / "00-template"
     shutil.copytree(template, lesson_path)
-    lesson = Lesson(
-        "00", "template", "Lesson template", LessonStatus.PUBLISHED, lesson_path
-    )
+    lesson = Lesson("00", "template", "Lesson template", LessonStatus.PUBLISHED, lesson_path)
     manager = WorkspaceManager(tmp_path)
     workspace = manager.start(lesson)
 

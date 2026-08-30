@@ -1,0 +1,51 @@
+name: Lesson feedback
+description: Tell us where a lesson helped or blocked your learning.
+title: "[Lesson]: "
+labels: [lesson-feedback]
+body:
+  - type: input
+    id: lesson
+    attributes:
+      label: Lesson ID
+      placeholder: 01-tensors-devices
+    validations:
+      required: true
+  - type: textarea
+    id: confusing
+    attributes:
+      label: Confusing section or concept
+      description: Quote a heading or explain where your mental model stopped matching the lesson.
+    validations:
+      required: true
+  - type: input
+    id: time
+    attributes:
+      label: Time spent
+      placeholder: 45 minutes
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Failing command and minimal output
+      render: shell
+    validations:
+      required: true
+  - type: dropdown
+    id: hint
+    attributes:
+      label: Highest hint level used
+      options:
+        - No hint
+        - Conceptual hint
+        - Interface hint
+        - Near-solution hint
+        - Reference solution
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested improvement
+    validations:
+      required: true

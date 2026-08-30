@@ -44,3 +44,24 @@ def test_readme_headings_follow_the_learning_path(project_root: Path) -> None:
         "## Contributing",
         "## License",
     ]
+
+
+def test_ci_and_contribution_templates_exist(project_root: Path) -> None:
+    required = {
+        ".github/workflows/ci.yml",
+        ".github/ISSUE_TEMPLATE/bug.yml",
+        ".github/ISSUE_TEMPLATE/lesson.yml",
+        ".github/pull_request_template.md",
+    }
+    paths = {str(path.relative_to(project_root)) for path in project_root.rglob("*")}
+    assert required <= paths
+    workflow = (project_root / ".github" / "workflows" / "ci.yml").read_text()
+    for command in (
+        "uv sync --frozen --python 3.12",
+        "uv run ruff check .",
+        "uv run ruff format --check .",
+        "uv run mypy",
+        "uv run pytest",
+        "uv run python scripts/verify_checkpoints.py",
+    ):
+        assert command in workflow

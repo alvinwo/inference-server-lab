@@ -54,8 +54,7 @@ def test_run_tests_rejects_missing_implementation(tmp_path: Path) -> None:
 def test_run_benchmark_uses_workspace_and_returns_json(tmp_path: Path) -> None:
     lesson, implementation = example_lesson(tmp_path)
     (lesson.path / "benchmark.py").write_text(
-        "import json\nfrom inference_lab import ORIGIN\n"
-        'print(json.dumps({"origin": ORIGIN}))\n'
+        'import json\nfrom inference_lab import ORIGIN\nprint(json.dumps({"origin": ORIGIN}))\n'
     )
     result = run_benchmark(tmp_path, lesson, implementation)
     assert result.returncode == 0
