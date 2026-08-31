@@ -10,9 +10,9 @@ checkpoint verification.
 Milestone 1 begins by publishing Lesson 1. It must preserve the established learner workspace and
 checkpoint contracts unless an architecture decision record explains and tests a change.
 
-## Milestone 1 — Foundations (`planned`)
+## Milestone 1 — Foundations (`in progress`)
 
-Publish Lessons 1–3 and a tested tiny-model generation path.
+Lesson 1 is published. Lessons 2–3 and the tested tiny-model generation path remain planned.
 
 ## Milestone 2 — First real server (`planned`)
 

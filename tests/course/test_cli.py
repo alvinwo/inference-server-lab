@@ -32,7 +32,7 @@ def make_published_checkpoint(root: Path) -> None:
 def test_list_prints_status_and_title(capsys) -> None:
     assert cli.main(["list"]) == 0
     output = capsys.readouterr().out
-    assert "01  planned    Tensors, devices, and trustworthy timing" in output
+    assert "01  published  Tensors, devices, and trustworthy timing" in output
     assert "14  planned    Load, resilience, and graduation benchmark" in output
 
 

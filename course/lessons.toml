@@ -2,7 +2,7 @@
 number = "01"
 slug = "tensors-devices"
 title = "Tensors, devices, and trustworthy timing"
-status = "planned"
+status = "published"
 
 [[lessons]]
 number = "02"

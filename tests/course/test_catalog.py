@@ -4,7 +4,6 @@ import pytest
 
 from course.catalog import find_lesson, load_catalog
 from course.errors import CourseError
-from course.models import LessonStatus
 
 
 def test_catalog_contains_all_version_one_lessons(project_root: Path) -> None:
@@ -12,7 +11,6 @@ def test_catalog_contains_all_version_one_lessons(project_root: Path) -> None:
     assert len(lessons) == 14
     assert lessons[0].lesson_id == "01-tensors-devices"
     assert lessons[-1].lesson_id == "14-load-resilience"
-    assert all(lesson.status is LessonStatus.PLANNED for lesson in lessons)
 
 
 def test_find_lesson_accepts_number_or_full_id(project_root: Path) -> None:

@@ -35,8 +35,8 @@ uv run python -m course list
 uv run python scripts/verify_checkpoints.py
 ```
 
-The list currently marks curriculum lessons as `planned`; a lesson can be started only after its
-starter, tests, solution, notes, and benchmark are published. Once a lesson is published, use:
+The list shows each lesson as `published` or `planned`; a lesson can be started only after its
+starter, tests, solution, notes, and benchmark are published. For a published lesson, use:
 
 ```bash
 uv run python -m course start 01
@@ -46,6 +46,9 @@ uv run python -m course reset 01 --yes
 ```
 
 Reset is recoverable: it moves your workspace into `work/.trash/` instead of deleting it.
+
+Lesson 1 is now published. Its learner guide is
+[`lessons/01-tensors-devices/README.md`](lessons/01-tensors-devices/README.md).
 
 ## Version 1 lesson map
 
