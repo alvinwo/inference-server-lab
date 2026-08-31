@@ -47,7 +47,13 @@ def _failed_node_ids(report_path: Path) -> tuple[str, ...]:
     return tuple(sorted(failures))
 
 
-def run_tests(project_root: Path, lesson: Lesson, implementation_root: Path) -> TestRun:
+def run_tests(
+    project_root: Path,
+    lesson: Lesson,
+    implementation_root: Path,
+    *,
+    test_node_ids: tuple[str, ...] | None = None,
+) -> TestRun:
     _validate_lesson(lesson, implementation_root)
     tests = lesson.path / "tests"
     if not tests.is_dir():
@@ -56,12 +62,13 @@ def run_tests(project_root: Path, lesson: Lesson, implementation_root: Path) -> 
         report_path = Path(temporary) / "report.json"
         environment = _environment(project_root, implementation_root)
         environment["INFERENCE_LAB_PYTEST_REPORT"] = str(report_path)
+        selected_tests = list(test_node_ids) if test_node_ids is not None else ["tests"]
         result = subprocess.run(
             [
                 sys.executable,
                 "-m",
                 "pytest",
-                "tests",
+                *selected_tests,
                 "-q",
                 "--rootdir=.",
                 "-p",
@@ -87,6 +94,24 @@ def run_benchmark(
     return subprocess.run(
         [sys.executable, str(benchmark)],
         cwd=lesson.path,
+        env=_environment(project_root, implementation_root),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
+def run_guided_lab(
+    project_root: Path, lesson: Lesson, implementation_root: Path
+) -> subprocess.CompletedProcess[str]:
+    """Run the complete worked example shipped with a lesson starter."""
+    _validate_lesson(lesson, implementation_root)
+    guided_lab = implementation_root / "guided_lab.py"
+    if not guided_lab.is_file():
+        raise CourseError(f"Lesson '{lesson.lesson_id}' has no guided lab")
+    return subprocess.run(
+        [sys.executable, str(guided_lab)],
+        cwd=implementation_root,
         env=_environment(project_root, implementation_root),
         capture_output=True,
         text=True,

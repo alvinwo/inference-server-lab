@@ -1,59 +1,73 @@
 # Lesson 00: Lesson title
 
-## Scenario
+<!--
+Authoring rule: assume the learner knows Python but not the new AI-infrastructure
+concept. Never ask them to invent code before they have run and changed a complete
+example of every new primitive.
+-->
 
-<!-- Describe one concrete symptom, user need, or production-shaped failure. -->
+## What are we building?
 
-## Learning goals
+<!-- Show where this lesson's artifact sits in the complete inference-server flow. -->
 
-<!-- List three to five observable things the learner will be able to do. -->
+## Why does the server need it?
 
-## Concept lab
+<!-- Start from a concrete serving symptom, user need, or production failure. -->
 
-<!-- Add a focused 20–40 minute experiment, or explain why one is unnecessary. -->
+## Files and responsibilities
 
-## Baseline
+<!-- Map each learner file to one clear purpose and its later role in the server. -->
 
-<!-- Give one runnable command and its expected output before the learner edits code. -->
+## How to study this chapter
 
-## Challenge
+Use the loop: predict → run → change → observe → explain → implement.
 
-<!-- Define one primary mechanism, its stable interface, and constrained TODOs. -->
+## Guided experiments
 
-## Tests
+<!--
+Build a complete `starter/guided_lab.py` using `# %%` cells. Interleave short
+explanations with executable code. The lab contains no blanks and introduces
+every primitive needed by the challenge. Give concrete changes for learners to
+try and questions whose answers can be observed in the output.
+-->
 
-<!-- Name acceptance criteria, edge cases, and invariants in beginner-friendly language. -->
+## Concept summary
 
-## Measurement
+<!-- Summarize the few rules learners should retain after the experiments. -->
 
-<!-- Explain the profile, trace, counter, or before/after benchmark and its metadata. -->
+## Build the artifact one checkpoint at a time
 
-## Tiered hints
+<!--
+Define ordered `[[steps]]` in checkpoint.toml. Each step names one behavior,
+explains why it exists, points to the exact file/function, provides a recipe or
+pseudocode, and ends with:
 
-### Conceptual hint
+    uv run python -m course test NN --step <id>
 
-<!-- Explain the relevant mental model without naming the implementation. -->
+State the exact passing count. Early steps may deliberately leave later branches
+unfinished. The full suite belongs only at the integration step.
+-->
 
-### Interface hint
+## Integrate all the pieces
 
-<!-- Point to the functions and data flow involved. -->
+<!-- Give the full test command, exact success output, and benchmark/measurement. -->
 
-### Near-solution hint
+## Explain what you built
 
-<!-- Provide pseudocode or a nearly complete sequence without copying the solution. -->
+<!-- Ask questions that require the learner to explain mechanisms and trade-offs. -->
 
 ## Reference solution
 
 <!-- Tell learners when to inspect solution/ and solution/NOTES.md. -->
 
-## Engineering journal
-
-<!-- Record attempts, design choices, surprising results, and remaining limitations. -->
-
 ## Industrial connection
 
-<!-- Connect the mechanism to specific vLLM and SGLang concepts and source-reading pointers. -->
+<!-- Connect the artifact to specific vLLM/SGLang concepts and source pointers. -->
 
-## Stretch challenge
+## Further exercises
 
-<!-- Add optional exploration that no later lesson requires. -->
+<!-- Add optional experiments; no later lesson may require them. -->
+
+## Primary references
+
+<!-- Link official documentation and primary source code. -->

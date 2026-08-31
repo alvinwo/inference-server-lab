@@ -2,7 +2,7 @@ import json
 import shutil
 from pathlib import Path
 
-from course.checkpoints import verify_checkpoint
+from course.checkpoints import load_steps, verify_checkpoint
 from course.models import Lesson, LessonStatus
 from course.runner import run_benchmark, run_tests
 from course.workspace import WorkspaceManager
@@ -18,6 +18,12 @@ def test_author_template_has_expected_starter_and_passing_solution(
         "tests/test_challenge.py::test_implementation_returns_ready",
     )
     assert report.solution_passed is True
+
+    assert (template / "starter" / "guided_lab.py").is_file()
+    steps = load_steps(lesson)
+    assert len(steps) == 1
+    assert steps[0].step_id == "first-behavior"
+    assert steps[0].test_node_ids == report.starter_failures
 
 
 def test_template_supports_the_complete_learner_flow(project_root: Path, tmp_path: Path) -> None:

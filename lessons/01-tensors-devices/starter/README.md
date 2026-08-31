@@ -1,14 +1,26 @@
 # Your Lesson 1 workspace
 
-Read the full guide at `lessons/01-tensors-devices/README.md` from the repository root.
-
-Run these commands from the repository root:
+Do not begin by running every test. Start with the complete, notebook-like experiment:
 
 ```bash
-uv run python work/01-tensors-devices/concept_lab.py
-uv run python -m course test 01
-uv run python -m course benchmark 01
+uv run python work/01-tensors-devices/guided_lab.py
 ```
 
-Implement only the `NotImplementedError` sites in `inference_lab/`. Keep this workspace and your
-engineering journal under `work/`; course reset archives it instead of deleting it.
+Read the full chapter at `lessons/01-tensors-devices/README.md`. It explains the inference-server
+picture, walks through each PyTorch idea, and tells you exactly what to implement in seven small
+steps.
+
+List those steps with:
+
+```bash
+uv run python -m course steps 01
+```
+
+Your first implementation checkpoint is:
+
+```bash
+uv run python -m course test 01 --step seed
+```
+
+Keep your implementation and engineering journal under `work/`. The course reset command archives
+this directory instead of deleting it.

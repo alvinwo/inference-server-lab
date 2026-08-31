@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from course.checkpoints import verify_checkpoint
+from course.checkpoints import load_steps, verify_checkpoint
 from course.errors import CourseError
 from course.models import Lesson, LessonStatus
 
@@ -21,6 +21,7 @@ def make_checkpoint(root: Path, expected_failure: str) -> Lesson:
         '    assert VALUE == "ready"\n'
     )
     (lesson_path / "README.md").write_text("# Example\n")
+    (lesson_path / "starter" / "guided_lab.py").write_text('print("complete guided example")\n')
     (lesson_path / "solution" / "NOTES.md").write_text("# Notes\n")
     (lesson_path / "checkpoint.toml").write_text(
         'expected_starter_failures = ["' + expected_failure + '"]\n'
@@ -55,3 +56,51 @@ def test_verify_checkpoint_requires_contract_files(tmp_path: Path) -> None:
     (lesson.path / "solution" / "NOTES.md").unlink()
     with pytest.raises(CourseError, match=r"solution/NOTES\.md"):
         verify_checkpoint(tmp_path, lesson)
+
+
+def test_verify_checkpoint_requires_a_runnable_guided_lab(tmp_path: Path) -> None:
+    lesson = make_checkpoint(tmp_path, "tests/test_challenge.py::test_value_is_ready")
+    (lesson.path / "starter" / "guided_lab.py").unlink()
+    with pytest.raises(CourseError, match=r"starter/guided_lab\.py"):
+        verify_checkpoint(tmp_path, lesson)
+
+
+def test_verify_checkpoint_rejects_a_broken_guided_lab(tmp_path: Path) -> None:
+    lesson = make_checkpoint(tmp_path, "tests/test_challenge.py::test_value_is_ready")
+    (lesson.path / "starter" / "guided_lab.py").write_text(
+        'raise RuntimeError("broken experiment")\n'
+    )
+    with pytest.raises(CourseError, match="Guided lab failed"):
+        verify_checkpoint(tmp_path, lesson)
+
+
+def test_load_steps_returns_ordered_guided_checkpoints(tmp_path: Path) -> None:
+    lesson = make_checkpoint(tmp_path, "tests/test_challenge.py::test_value_is_ready")
+    (lesson.path / "checkpoint.toml").write_text(
+        'expected_starter_failures = ["tests/test_challenge.py::test_value_is_ready"]\n\n'
+        "[[steps]]\n"
+        'id = "first"\n'
+        'title = "Understand the first behavior"\n'
+        'test_node_ids = ["tests/test_challenge.py::test_value_is_ready"]\n'
+    )
+
+    steps = load_steps(lesson)
+
+    assert len(steps) == 1
+    assert steps[0].step_id == "first"
+    assert steps[0].title == "Understand the first behavior"
+    assert steps[0].test_node_ids == ("tests/test_challenge.py::test_value_is_ready",)
+
+
+def test_load_steps_rejects_unknown_test_node_ids(tmp_path: Path) -> None:
+    lesson = make_checkpoint(tmp_path, "tests/test_challenge.py::test_value_is_ready")
+    (lesson.path / "checkpoint.toml").write_text(
+        'expected_starter_failures = ["tests/test_challenge.py::test_value_is_ready"]\n\n'
+        "[[steps]]\n"
+        'id = "first"\n'
+        'title = "Broken step"\n'
+        'test_node_ids = ["tests/test_challenge.py::test_does_not_exist"]\n'
+    )
+
+    with pytest.raises(CourseError, match="unknown test node ID"):
+        load_steps(lesson)

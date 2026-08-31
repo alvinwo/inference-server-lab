@@ -1,242 +1,473 @@
 # Lesson 1: Tensors, devices, and trustworthy timing
 
-Estimated time: 20–40 minutes for the concept lab, then 1–3 hours for the challenge.
+This is a learn-by-doing chapter. You are not expected to know PyTorch or GPU programming before
+starting. Read a small idea, run real code, change it, observe the result, and only then implement
+the corresponding piece of the inference runtime.
 
-## Scenario
+Estimated time: 60–90 minutes for the guided chapter and 1–3 hours for the implementation.
 
-You are about to build model layers and eventually run them inside an inference server. A tensor
-operation that is correct for one two-dimensional CPU example can still fail when requests add
-batch dimensions, when tensors use different dtypes, or when work runs asynchronously on an
-accelerator.
+## What are we building?
 
-Your first production-shaped task is to create a small, explicit tensor runtime. It must say which
-device it actually selected, produce repeatable random inputs within one environment, apply a
-batched affine projection, and measure completed work rather than merely the time needed to enqueue
-it.
+An inference server turns text requests into generated text:
 
-## Learning goals
-
-By the end of this lesson, you will be able to:
-
-- read tensor shapes as named dimensions such as batch, token, and feature;
-- explain how matrix multiplication handles the last two dimensions and broadcasts leading ones;
-- keep tensor dtype and device placement consistent across an operation;
-- distinguish an explicit device request from an automatic policy;
-- seed Python and PyTorch for repeatable experiments in one environment; and
-- benchmark with warmup and device synchronization.
-
-## Concept lab
-
-Start the lesson from the repository root, then run the lab copied into your workspace:
-
-```bash
-uv run python -m course start 01
-uv run python work/01-tensors-devices/concept_lab.py
+```text
+"Explain KV cache"
+        │
+        ▼
+tokenizer → token IDs → Transformer → next-token scores → sampler → "A"
+                       ▲
+                       │
+                 repeated many times
 ```
 
-The lab is executable documentation. Read it from top to bottom and change a few shapes while you
-work. It covers:
+The Transformer does not operate on strings. It operates on **tensors**: multidimensional arrays
+with a shape, numeric type, and execution device. Before we can build attention, KV cache, batching,
+or a scheduler, we need a small reliable layer underneath them:
 
-1. a `[batch, tokens, features]` tensor;
-2. adding a one-dimensional bias through broadcasting;
-3. multiplying by a transposed `[output_features, input_features]` weight;
-4. the storage difference between float32 and float16;
-5. moving a tensor to CPU or MPS and asking the tensor where it lives;
-6. repeating a random sequence with a fixed seed;
-7. disabling autograd bookkeeping with `torch.inference_mode`; and
-8. warming up and synchronizing before reporting one timing observation.
-
-New terms:
-
-- **dtype** is the numeric representation of each tensor element, such as `torch.float32`.
-- **device** is where PyTorch stores and executes a tensor, such as `cpu` or `mps`.
-- **broadcasting** expands compatible size-one or missing dimensions without manually copying data.
-- **warmup** runs an operation before measurement so one-time initialization is not mistaken for
-  steady-state cost.
-- **synchronization** waits until queued accelerator work has completed.
-
-## Baseline
-
-Before editing anything, run:
-
-```bash
-uv run python -m course test 01
+```text
+DevicePolicy ── chooses and reports CPU or MPS
+      │
+      ▼
+tensor inputs ── affine projection: x @ W.T + b ── tensor outputs
+      │                                                   │
+      └──────── trustworthy synchronized timing ──────────┘
 ```
 
-The expected baseline is `13 failed, 1 passed`. Those failures are the challenge—not an installation
-problem. The passing test confirms that the provided `TimingStats` scaffold already summarizes raw
-samples.
+That is Lesson 1. You are not building an HTTP server yet. You are building three foundations that
+every later server component will rely on.
 
-If you see a collection error or a different failure count, stop and inspect the first error before
-writing code.
+## The four files and what they mean
 
-## Challenge
+Your workspace is `work/01-tensors-devices/`.
 
-Implement the `NotImplementedError` sites inside `work/01-tensors-devices/inference_lab/`.
+| File | Role in this chapter | Later role in the server |
+|---|---|---|
+| `guided_lab.py` | Complete experiments to read, run, and modify | Builds your PyTorch mental model |
+| `inference_lab/devices.py` | Select a device and seed randomness | Server startup configuration |
+| `inference_lab/tensor_ops.py` | Apply one model-like projection | The core operation inside model layers |
+| `inference_lab/timing.py` | Measure completed work | Honest benchmarks and latency metrics |
 
-### 1. Resolve a visible device policy
+The guided lab is complete. The three `inference_lab` files are the code you implement.
 
-Implement `DevicePolicy.resolve()` in `devices.py`:
+## How to study this chapter
 
-- `cpu` always selects CPU.
-- `mps` selects MPS only when `torch.backends.mps.is_available()` is true.
-- An unavailable explicit `mps` request raises `DeviceUnavailableError`; it must not silently run on
-  CPU.
-- `auto` visibly selects MPS when available and CPU otherwise.
-- Any other preference raises `ValueError` listing the supported choices.
+For every experiment, use this loop:
 
-The returned object records both the request and the actual `torch.device`. Its provided `report()`
-method is the metadata later server startup logs will use.
+1. Read the explanation and the corresponding section of `guided_lab.py`.
+2. Predict the shape, value, or behavior before running it.
+3. Run the code and compare the output with your prediction.
+4. Change one value or shape and run it again.
+5. Explain the result aloud or in one sentence.
+6. Implement the small runtime step that uses the same idea.
 
-Implement `seed_everything()` so the Python `random` module and PyTorch repeat their sequences when
-given the same seed. Reproducibility means repeatability within the same software and hardware
-environment; it does not promise identical values across PyTorch versions or CPU and MPS.
+Do not begin with the full test suite. It intentionally contains all unfinished behaviors and is
+useful only at the end.
 
-### 2. Implement a batched affine projection
+## Setup and first run
 
-Implement `affine()` in `tensor_ops.py` for the equation:
+From the repository root:
+
+```bash
+uv sync --frozen --python 3.12
+uv run python work/01-tensors-devices/guided_lab.py
+uv run python -m course steps 01
+```
+
+`guided_lab.py` uses `# %%` cell markers. You may run it as one normal Python program, or open it in
+VS Code or PyCharm and run one cell at a time. No Jupyter setup is required.
+
+---
+
+## Part 1 — Tensors carry data and metadata
+
+A Python integer such as `42` has one value. A tensor can contain millions or billions of values.
+It also carries three pieces of metadata that matter throughout an inference engine:
+
+- **shape**: how values are arranged and what dimensions mean;
+- **dtype**: how each value is represented, such as `torch.float32`; and
+- **device**: where values are stored and operations execute, such as `cpu` or `mps`.
+
+In the first guided experiment, token IDs have shape `[2, 3]`:
+
+```text
+[[10, 42, 7],    ← request 0 has three tokens
+ [ 5,  5, 9]]    ← request 1 has three tokens
+```
+
+The dimension names are `[batch, tokens]`. `batch=2` means two requests are processed together.
+
+Try this in `guided_lab.py`:
+
+1. Change the tensor to contain three rows. What is the new batch dimension?
+2. Remove one token from only the first row. Why can PyTorch no longer create one rectangular
+   tensor from that nested list?
+3. Change `dtype=torch.int64` to `torch.float32`. What changes in the output, and why are integer
+   IDs more appropriate for tokenizer output?
+
+Inference connection: later, continuous batching decides which requests share a batch. Tensor
+shapes are how that scheduling decision reaches the model.
+
+## Part 2 — Shapes give dimensions meaning
+
+A Transformer usually represents each token with a vector:
+
+```text
+[batch, tokens, hidden]
+   2       3       4
+```
+
+This shape means two requests, three token positions per request, and four numbers describing each
+token. Real models use much larger hidden dimensions, but the rules are identical.
+
+The guided lab adds a bias with shape `[hidden]` to a tensor with shape
+`[batch, tokens, hidden]`. PyTorch **broadcasts** the bias across every batch item and token. It acts
+as if the bias had been copied, without requiring you to make those copies manually.
+
+Try this:
+
+1. Change `batch` from 2 to 5. Does the bias code change?
+2. Change `hidden` from 4 to 5 without changing the bias. Read the error and identify the
+   incompatible dimension.
+3. Repair the bias so its length matches `hidden`.
+
+Rule to remember: operations align dimensions from the right. A `[hidden]` bias naturally aligns
+with the last dimension of `[batch, tokens, hidden]`.
+
+## Part 3 — Affine projection is everywhere in a Transformer
+
+The equation
 
 ```text
 output = inputs @ weight.T + bias
 ```
 
-`inputs` may have shape `[input_features]`, `[tokens, input_features]`, or
-`[batch, tokens, input_features]`. `weight` always has shape
-`[output_features, input_features]`, and `bias` has shape `[output_features]`. Validate ranks,
-feature dimensions, dtype, and device before computing the result. Let PyTorch broadcast the bias
-over every leading dimension.
+is an affine projection. Attention uses projections to create queries, keys, and values. MLP layers
+use larger projections to expand and contract token representations. The operation changes the
+last dimension while preserving the leading dimensions:
 
-### 3. Measure completed work
+```text
+inputs:  [batch, tokens, input_features]
+weight:  [output_features, input_features]
+bias:    [output_features]
+output:  [batch, tokens, output_features]
+```
 
-Implement `synchronize()` and `benchmark_operation()` in `timing.py`:
+Why transpose the weight? Matrix multiplication needs the inner dimensions to match:
 
-- CPU synchronization is a no-op.
-- MPS synchronization calls `torch.mps.synchronize()`.
-- Other device types are rejected in this CPU/MPS lesson.
-- Negative warmup and zero iterations are rejected.
-- Warmup calls are not included in the samples.
-- Synchronize before starting each timer and after the operation, then store milliseconds.
+```text
+[tokens, input_features] @ [input_features, output_features]
+```
 
-Keep the public interfaces and file names unchanged; later lessons build on them.
+but model weights are conventionally stored as `[output_features, input_features]`.
 
-## Tests
+In guided experiment 3, calculate the first output token by hand before running the code. Then:
 
-Run the whole checkpoint after every small change:
+1. Remove `weight.transpose(0, 1)` and read the shape error.
+2. Change the bias to zeros. Which part of the output changes?
+3. Add another batch item. Confirm that only the leading batch dimension changes.
+
+## Part 4 — Device selection must be visible
+
+On your Mac, PyTorch may use:
+
+- `cpu`: always available; or
+- `mps`: Apple's Metal acceleration backend, available on supported Apple Silicon/macOS setups.
+
+This course distinguishes a **request** from a **selection**:
+
+```text
+requested="auto"  → selected="mps" if available, otherwise "cpu"
+requested="cpu"   → selected="cpu"
+requested="mps"   → selected="mps", or raise an error
+```
+
+An explicit MPS request must never silently fall back to CPU. Silent fallback produces misleading
+benchmark reports and can hide deployment mistakes.
+
+In guided experiment 4, compare the requested policy with the device reported by the tensor. Try
+creating a CPU tensor explicitly and printing its `.device`.
+
+## Part 5 — Repeatable experiments need seeds
+
+Random weights and inputs make experiments useful, but they also make debugging confusing. A seed
+sets the starting state of a random-number generator. Python and PyTorch use separate generators,
+so seed both.
+
+Run guided experiment 5, then:
+
+1. Change only the second seed from 7 to 8. Confirm the values differ.
+2. Seed Python but not PyTorch. Which sequence repeats?
+3. Restart the program with the original seed. Confirm the sample repeats in your environment.
+
+A seed improves repeatability; it does not guarantee identical values across every PyTorch version,
+device, or nondeterministic operation.
+
+## Part 6 — Inference mode is different from device selection
+
+Training records operations so gradients can be calculated later. Inference only needs the forward
+result. `torch.inference_mode()` disables that training bookkeeping.
+
+This is independent of device selection:
+
+```text
+device policy     answers: where does this execute?
+inference mode    answers: should PyTorch record training information?
+```
+
+Run guided experiment 6 and inspect `requires_grad` on both outputs.
+
+## Part 7 — Accelerator timing needs synchronization
+
+CPU operations normally finish before the Python call returns. Accelerator calls may enqueue work
+and return while the accelerator is still busy. Timing only the Python call can therefore measure
+dispatch time instead of completed computation.
+
+A trustworthy basic sample looks like this:
+
+```text
+warm up several times (not measured)
+synchronize
+start clock
+run operation
+synchronize
+stop clock
+```
+
+Warmup removes one-time initialization from the measured samples. Synchronization creates honest
+timer boundaries. Run guided experiment 7 twice and observe that the values vary; a benchmark
+should keep multiple raw samples rather than treating one number as truth.
+
+## Concept summary
+
+- A tensor combines values with shape, dtype, and device metadata.
+- Dimension names such as `[batch, tokens, hidden]` turn shapes into a model of the data.
+- Affine projection preserves leading dimensions and changes the final feature dimension.
+- Requested device and selected device are different facts; report both.
+- A fixed seed improves repeatability inside one environment but is not a universal guarantee.
+- Inference mode disables training bookkeeping; it does not choose an execution device.
+- Warmup and synchronization are necessary for a basic honest accelerator timing sample.
+
+---
+
+# Build the runtime, one checkpoint at a time
+
+You now know what the three runtime modules mean. Each step below asks you to transfer one pattern
+from `guided_lab.py` into reusable, tested code.
+
+List the checkpoints at any time:
+
+```bash
+uv run python -m course steps 01
+```
+
+## Step 1 — Seed Python and PyTorch
+
+Open `work/01-tensors-devices/inference_lab/devices.py` and find `seed_everything()`.
+
+Why it exists: a server benchmark needs repeatable inputs when comparing two implementations.
+
+Implement this recipe:
+
+```text
+give the seed to Python's random module
+give the same seed to PyTorch
+if MPS is available, give the seed to torch.mps too
+```
+
+Remove the placeholder `del seed` and `NotImplementedError`. The imports are already present.
+
+Run only this checkpoint:
+
+```bash
+uv run python -m course test 01 --step seed
+```
+
+Done means `1 passed`. Do not work on the other functions yet.
+
+## Step 2 — Represent an explicit CPU decision
+
+Find `DevicePolicy.resolve()` in `devices.py`. The `DevicePolicy` dataclass is a record containing:
+
+- `requested`: what the user asked for;
+- `selected`: the actual `torch.device`;
+- `dtype`: the numeric representation; and
+- `reason`: a sentence suitable for logs.
+
+Start with only the CPU case:
+
+```text
+if requested is "cpu":
+    return a DevicePolicy containing torch.device("cpu"), the supplied dtype,
+    and a non-empty explanation
+otherwise:
+    keep raising NotImplementedError for now
+```
+
+Run:
+
+```bash
+uv run python -m course test 01 --step cpu-policy
+```
+
+Done means `1 passed`.
+
+## Step 3 — Complete device selection
+
+Extend the same method in this order:
+
+1. Reject anything outside `auto`, `cpu`, and `mps` with `ValueError`. Include the supported names
+   in the message.
+2. Keep your CPU branch.
+3. For explicit `mps`, return MPS when `torch.backends.mps.is_available()` is true. Otherwise raise
+   `DeviceUnavailableError` with `MPS` in the message.
+4. For `auto`, select MPS when available and CPU otherwise. Record the reason.
+
+Run:
+
+```bash
+uv run python -m course test 01 --step device-selection
+```
+
+Done means `3 passed`.
+
+## Step 4 — Implement the affine calculation
+
+Open `tensor_ops.py`. First implement the happy path you studied in guided experiment 3:
+
+```text
+transpose dimensions 0 and 1 of weight
+matrix-multiply inputs by that transposed weight
+add bias
+return the result
+```
+
+Remove the placeholder `del` and `NotImplementedError` lines.
+
+Run:
+
+```bash
+uv run python -m course test 01 --step affine-core
+```
+
+Done means `2 passed`.
+
+## Step 5 — Protect the affine contract
+
+Production code should reject invalid tensors near the boundary with a useful message. Before the
+calculation, check:
+
+1. `inputs` has at least one dimension;
+2. `weight` has exactly two dimensions;
+3. `inputs.shape[-1] == weight.shape[1]`;
+4. `bias` has one dimension and `bias.shape[0] == weight.shape[0]`;
+5. all three tensors have the same dtype; and
+6. all three tensors are on the same device.
+
+Raise `ValueError` for each violated rule. The test output tells you the meaningful phrase expected
+in each message.
+
+Run:
+
+```bash
+uv run python -m course test 01 --step affine-contract
+```
+
+Done means `2 passed`.
+
+## Step 6 — Synchronize supported devices
+
+Open `timing.py` and find `synchronize()`.
+
+Implement three branches:
+
+```text
+cpu → return immediately; there is nothing extra to wait for
+mps → call torch.mps.synchronize(), then return
+anything else → raise ValueError explaining that this lesson supports cpu and mps
+```
+
+Run:
+
+```bash
+uv run python -m course test 01 --step synchronize
+```
+
+Done means `2 passed`.
+
+## Step 7 — Benchmark completed operations
+
+Find `benchmark_operation()` in `timing.py`. The provided `TimingStats` class stores your result.
+
+Implement this sequence:
+
+1. Reject `warmup < 0` and `iterations < 1` with `ValueError`.
+2. Warmup loop: call the operation, then synchronize. Do not time or save these calls.
+3. Measurement loop: synchronize, read `perf_counter()`, call the operation, synchronize, read the
+   clock again, convert seconds to milliseconds, and append the sample.
+4. Return `TimingStats(device.type, warmup, tuple(samples))`.
+
+Run:
+
+```bash
+uv run python -m course test 01 --step benchmark
+```
+
+Done means `2 passed`.
+
+## Integrate all the pieces
+
+Now run the whole lesson:
 
 ```bash
 uv run python -m course test 01
 ```
 
-The visible tests check:
-
-- explicit CPU, automatic selection, explicit MPS failure, and invalid preferences;
-- repeatability for both Python and PyTorch random sequences;
-- literal affine values, three-dimensional inputs, dtype/device preservation, and bad shapes;
-- safe CPU synchronization and rejection of unsupported devices;
-- warmup count, synchronization order, literal timing samples, and invalid iteration counts.
-
-Read a failing assertion as a description of the next behavior to implement. Do not change the
-tests to make the checkpoint green.
-
-## Measurement
-
-After all tests pass, run the controlled CPU benchmark:
+You are finished when it reports `14 passed`. Then collect a controlled CPU benchmark:
 
 ```bash
 uv run python -m course benchmark 01
 ```
 
-It prints one JSON object containing the workload shape, dtype, requested and selected device,
-warmup count, all latency samples, summary statistics, and software/platform metadata. There is no
-speed threshold: the evidence is whether the method is honest and reproducible.
-
-On an Apple Silicon Mac, compare the same workload with visible automatic device selection:
+On a Mac with MPS available, compare automatic device selection:
 
 ```bash
 INFERENCE_LAB_DEVICE=auto uv run python -m course benchmark 01
 ```
 
-Do not conclude that one device is universally faster from this tiny workload. Launch overhead,
-shape, dtype, thermal state, and PyTorch version all matter.
+Do not use this tiny workload to declare one device universally faster. Shape, dtype, launch
+overhead, software version, thermal state, and background load all affect the observation.
 
-## Tiered hints
+## Explain what you built
 
-### Conceptual hint
+Create `work/01-tensors-devices/JOURNAL.md` and answer in your own words:
 
-For affine projection, only the final input dimension participates in the matrix product. Every
-dimension before it describes independent rows of feature vectors. The bias aligns with the new
-final dimension.
+1. In `[batch, tokens, hidden]`, what does one value of each dimension represent?
+2. Why does affine projection transpose the stored weight?
+3. What is the difference between requested and selected device?
+4. Why is silent fallback dangerous for a benchmark?
+5. Why do we warm up and synchronize?
+6. Where will each Lesson 1 component appear in a future inference server?
 
-For timing, an accelerator call can return before its work finishes. A wall-clock timer is useful
-only when the boundaries surround completed work.
-
-### Interface hint
-
-- In `DevicePolicy.resolve`, decide the selected `torch.device` first, then construct the frozen
-  dataclass with a human-readable reason.
-- In `affine`, compare `inputs.shape[-1]` with `weight.shape[1]`, then transpose only dimensions 0
-  and 1 of the two-dimensional weight.
-- In `benchmark_operation`, warm up in one loop and collect samples in a separate loop.
-
-### Near-solution hint
-
-The affine computation needs one `torch.matmul` and one addition after validation. The measured loop
-has this order: synchronize, read the clock, call the operation, synchronize, read the clock, convert
-seconds to milliseconds. The warmup loop calls the operation and synchronizes but never reads the
-clock.
+If you cannot explain one answer, return to the corresponding guided experiment and change one
+thing. That loop—predict, run, observe, explain—is the point of the lesson.
 
 ## Reference solution
 
-Finish the challenge and write your engineering journal before opening `solution/`. Then compare
-behavior and reasoning, not just line-by-line syntax:
+Only after all seven attempts, compare your implementation with
+`lessons/01-tensors-devices/solution/inference_lab/`. Compare behavior and reasoning, not merely
+syntax. The solution notes explain design choices and limitations.
 
-```bash
-diff -ru work/01-tensors-devices/inference_lab \
-  lessons/01-tensors-devices/solution/inference_lab
-```
+## Primary references
 
-The reference solution is deliberately portable and readable. It is not proof that no other correct
-implementation exists.
-
-## Engineering journal
-
-Create `work/01-tensors-devices/JOURNAL.md` and answer:
-
-1. Which shape mistake took the longest to understand, and what dimension names clarified it?
-2. What device did `auto` select, and how did the program make that visible?
-3. Why is silent CPU fallback dangerous when interpreting a benchmark?
-4. What changed between the first timing call and warmed-up samples?
-5. Which guarantees does a fixed seed provide, and which does it not provide?
-6. What limitation would you address before reusing this timing helper in a production benchmark?
-
-## Industrial connection
-
-This lesson is smaller than an inference engine, but its invariants appear everywhere in one:
-
-- A model runner must keep weights, activations, positions, and cache tensors on compatible devices
-  and dtypes.
-- Batched token representations repeatedly pass through affine projections for attention and MLP
-  layers.
-- Startup and benchmark reports must identify the actual device; otherwise comparisons are not
-  auditable.
-- Accelerator benchmarks must account for asynchronous execution.
-
-After completing the challenge, skim—not memorize—vLLM's
-[`DeviceConfig`](https://github.com/vllm-project/vllm/blob/main/vllm/config/device.py) and SGLang's
-[`ModelRunner`](https://github.com/sgl-project/sglang/blob/main/python/sglang/srt/model_executor/model_runner.py).
-Notice how quickly real systems accumulate device, dtype, memory, and execution concerns around
-model code.
-
-Primary PyTorch references:
-
-- [MPS backend](https://docs.pytorch.org/docs/stable/notes/mps.html)
-- [`torch.mps.synchronize`](https://docs.pytorch.org/docs/stable/generated/torch.mps.synchronize.html)
+- [PyTorch tensor introduction](https://docs.pytorch.org/tutorials/beginner/basics/tensorqs_tutorial.html)
+- [Broadcasting semantics](https://docs.pytorch.org/docs/stable/notes/broadcasting.html)
 - [`torch.matmul`](https://docs.pytorch.org/docs/stable/generated/torch.matmul.html)
+- [MPS backend](https://docs.pytorch.org/docs/stable/notes/mps.html)
 - [`torch.inference_mode`](https://docs.pytorch.org/docs/stable/generated/torch.autograd.grad_mode.inference_mode.html)
 - [Reproducibility notes](https://docs.pytorch.org/docs/stable/notes/randomness.html)
 
-## Stretch challenge
-
-Optional: add a benchmark mode that compares float32 and float16 on the selected device while still
-reporting every metadata field. First write down what you expect, then measure. Do not make a later
-lesson depend on this extension, and do not introduce a performance pass/fail threshold.
+After finishing, skim vLLM's
+[`DeviceConfig`](https://github.com/vllm-project/vllm/blob/main/vllm/config/device.py) and SGLang's
+[`ModelRunner`](https://github.com/sgl-project/sglang/blob/main/python/sglang/srt/model_executor/model_runner.py).
+You are not expected to understand them yet. Notice only that device, dtype, and execution concerns
+surround the model code in real inference systems.

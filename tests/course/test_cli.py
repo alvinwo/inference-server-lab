@@ -20,6 +20,7 @@ def make_published_checkpoint(root: Path) -> None:
         'from inference_lab import STATUS\n\ndef test_status():\n    assert STATUS == "ready"\n'
     )
     (lesson_path / "README.md").write_text("# Example\n")
+    (lesson_path / "starter" / "guided_lab.py").write_text('print("complete guided example")\n')
     (lesson_path / "solution" / "NOTES.md").write_text("# Notes\n")
     (lesson_path / "checkpoint.toml").write_text(
         'expected_starter_failures = ["tests/test_challenge.py::test_status"]\n'
@@ -94,3 +95,31 @@ def test_test_command_reports_a_missing_workspace_cleanly(
     monkeypatch.setattr(cli, "PROJECT_ROOT", tmp_path)
     assert cli.main(["test", "01"]) == 2
     assert "Missing implementation directory" in capsys.readouterr().err
+
+
+def test_steps_and_step_test_commands_guide_one_checkpoint(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    make_published_checkpoint(tmp_path)
+    checkpoint = tmp_path / "lessons" / "01-example" / "checkpoint.toml"
+    checkpoint.write_text(
+        'expected_starter_failures = ["tests/test_challenge.py::test_status"]\n\n'
+        "[[steps]]\n"
+        'id = "status"\n'
+        'title = "Return the ready status"\n'
+        'test_node_ids = ["tests/test_challenge.py::test_status"]\n'
+    )
+    monkeypatch.setattr(cli, "PROJECT_ROOT", tmp_path)
+
+    assert cli.main(["steps", "01"]) == 0
+    steps_output = capsys.readouterr().out
+    assert "status" in steps_output
+    assert "Return the ready status" in steps_output
+
+    assert cli.main(["start", "01"]) == 0
+    capsys.readouterr()
+    assert cli.main(["test", "01", "--step", "status"]) == 1
+    assert "1 failed" in capsys.readouterr().out
+
+    assert cli.main(["test", "01", "--step", "missing"]) == 2
+    assert "Unknown step 'missing'" in capsys.readouterr().err

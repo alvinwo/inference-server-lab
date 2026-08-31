@@ -13,3 +13,58 @@ expected_starter_failures = [
   "tests/test_timing.py::test_synchronize_accepts_cpu",
   "tests/test_timing.py::test_synchronize_rejects_unsupported_device",
 ]
+
+[[steps]]
+id = "seed"
+title = "Make Python and PyTorch randomness repeatable"
+test_node_ids = [
+  "tests/test_devices.py::test_seed_everything_repeats_python_and_torch_sequences",
+]
+
+[[steps]]
+id = "cpu-policy"
+title = "Represent one explicit CPU device decision"
+test_node_ids = [
+  "tests/test_devices.py::test_cpu_policy_reports_requested_and_selected_device",
+]
+
+[[steps]]
+id = "device-selection"
+title = "Handle auto, MPS, and invalid device requests"
+test_node_ids = [
+  "tests/test_devices.py::test_auto_policy_reports_actual_device",
+  "tests/test_devices.py::test_explicit_mps_never_silently_falls_back",
+  "tests/test_devices.py::test_unknown_device_preference_is_rejected",
+]
+
+[[steps]]
+id = "affine-core"
+title = "Project token vectors with x @ W.T + b"
+test_node_ids = [
+  "tests/test_tensor_ops.py::test_affine_matches_hand_calculated_values",
+  "tests/test_tensor_ops.py::test_affine_supports_batch_and_token_dimensions",
+]
+
+[[steps]]
+id = "affine-contract"
+title = "Reject incompatible affine inputs"
+test_node_ids = [
+  "tests/test_tensor_ops.py::test_affine_preserves_dtype_and_device",
+  "tests/test_tensor_ops.py::test_affine_rejects_incompatible_shapes",
+]
+
+[[steps]]
+id = "synchronize"
+title = "Wait for supported devices to finish queued work"
+test_node_ids = [
+  "tests/test_timing.py::test_synchronize_accepts_cpu",
+  "tests/test_timing.py::test_synchronize_rejects_unsupported_device",
+]
+
+[[steps]]
+id = "benchmark"
+title = "Warm up and measure completed operations"
+test_node_ids = [
+  "tests/test_timing.py::test_benchmark_rejects_invalid_iteration_counts",
+  "tests/test_timing.py::test_benchmark_runs_warmup_and_synchronizes_each_sample",
+]

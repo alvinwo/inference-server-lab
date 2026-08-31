@@ -19,7 +19,12 @@ class DevicePolicy:
 
     @classmethod
     def resolve(cls, requested: str = "auto", dtype: torch.dtype = torch.float32) -> "DevicePolicy":
-        """Resolve ``auto``, ``cpu``, or ``mps`` without a silent explicit fallback."""
+        """Resolve ``auto``, ``cpu``, or ``mps`` without a silent explicit fallback.
+
+        Implement this in chapter Steps 2 and 3. Start with the explicit CPU
+        branch, run its named checkpoint, and only then add validation, MPS,
+        and automatic selection. Return ``cls(requested, device, dtype, reason)``.
+        """
         raise NotImplementedError("Resolve the requested device policy")
 
     def report(self) -> dict[str, str]:
@@ -33,6 +38,10 @@ class DevicePolicy:
 
 
 def seed_everything(seed: int) -> None:
-    """Seed Python and every PyTorch backend used by this lesson."""
+    """Seed Python and every PyTorch backend used by this lesson.
+
+    This is chapter Step 1. Guided experiment 5 demonstrates the calls you
+    need; transfer that pattern here, including MPS when it is available.
+    """
     del seed
     raise NotImplementedError("Seed Python and PyTorch random number generators")

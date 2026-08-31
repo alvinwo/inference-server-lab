@@ -49,6 +49,13 @@ Reset is recoverable: it moves your workspace into `work/.trash/` instead of del
 
 Lesson 1 is now published. Its learner guide is
 [`lessons/01-tensors-devices/README.md`](lessons/01-tensors-devices/README.md).
+It begins with a complete guided experiment and supports one small checkpoint at a time:
+
+```bash
+uv run python work/01-tensors-devices/guided_lab.py
+uv run python -m course steps 01
+uv run python -m course test 01 --step seed
+```
 
 ## Version 1 lesson map
 

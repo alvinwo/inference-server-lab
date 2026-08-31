@@ -44,6 +44,24 @@ def test_run_tests_reports_failed_node_ids(tmp_path: Path) -> None:
     assert result.failed_node_ids == ("tests/test_origin.py::test_expected_failure",)
 
 
+def test_run_tests_can_select_one_guided_step(tmp_path: Path) -> None:
+    lesson, implementation = example_lesson(tmp_path)
+    (lesson.path / "tests" / "test_second.py").write_text(
+        "def test_unfinished_later_step():\n    assert False\n"
+    )
+
+    result = run_tests(
+        tmp_path,
+        lesson,
+        implementation,
+        test_node_ids=("tests/test_origin.py::test_origin",),
+    )
+
+    assert result.returncode == 0
+    assert result.failed_node_ids == ()
+    assert "1 passed" in result.stdout
+
+
 def test_run_tests_rejects_missing_implementation(tmp_path: Path) -> None:
     lesson, implementation = example_lesson(tmp_path)
     implementation.rename(tmp_path / "gone")

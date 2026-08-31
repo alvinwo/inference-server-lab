@@ -1,3 +1,10 @@
 expected_starter_failures = [
   "tests/test_challenge.py::test_implementation_returns_ready",
 ]
+
+[[steps]]
+id = "first-behavior"
+title = "Implement the first independently understandable behavior"
+test_node_ids = [
+  "tests/test_challenge.py::test_implementation_returns_ready",
+]

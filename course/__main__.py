@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from course.catalog import find_lesson, load_catalog
-from course.checkpoints import verify_checkpoint
+from course.checkpoints import find_step, load_steps, verify_checkpoint
 from course.errors import CourseError
 from course.runner import run_benchmark, run_tests
 from course.workspace import WorkspaceManager
@@ -20,6 +20,9 @@ def _parser() -> argparse.ArgumentParser:
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("list", help="List every lesson and publication status.")
 
+    steps = commands.add_parser("steps", help="List a lesson's guided implementation steps.")
+    steps.add_argument("lesson")
+
     start = commands.add_parser("start", help="Copy a lesson starter into work/.")
     start.add_argument("lesson")
 
@@ -27,8 +30,11 @@ def _parser() -> argparse.ArgumentParser:
     reset.add_argument("lesson")
     reset.add_argument("--yes", action="store_true", help="Confirm the recoverable reset.")
 
+    test = commands.add_parser("test", help="Run a lesson's tests against your workspace.")
+    test.add_argument("lesson")
+    test.add_argument("--step", help="Run only one named guided checkpoint.")
+
     for name, help_text in (
-        ("test", "Run a lesson's tests against your workspace."),
         ("benchmark", "Run a lesson's benchmark against your workspace."),
         ("verify", "Verify a lesson's starter and solution contract."),
     ):
@@ -56,6 +62,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             raise CourseError("Refusing reset without --yes; your workspace was not changed.")
 
         lesson = find_lesson(PROJECT_ROOT, args.lesson)
+        if args.command == "steps":
+            steps = load_steps(lesson)
+            if not steps:
+                raise CourseError(f"Lesson '{lesson.lesson_id}' has no guided steps")
+            for step in steps:
+                print(f"{step.step_id:<18}  {step.title}")
+            return 0
         manager = WorkspaceManager(PROJECT_ROOT)
         if args.command == "start":
             destination = manager.start(lesson)
@@ -66,7 +79,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"Archived {lesson.lesson_id} to {_display_path(archived)}")
             return 0
         if args.command == "test":
-            test_result = run_tests(PROJECT_ROOT, lesson, manager.workspace_path(lesson))
+            selected = find_step(lesson, args.step).test_node_ids if args.step else None
+            test_result = run_tests(
+                PROJECT_ROOT,
+                lesson,
+                manager.workspace_path(lesson),
+                test_node_ids=selected,
+            )
             print(test_result.stdout, end="")
             print(test_result.stderr, end="", file=sys.stderr)
             return test_result.returncode

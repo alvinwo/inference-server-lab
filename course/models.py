@@ -30,6 +30,13 @@ class TestRun:
 
 
 @dataclass(frozen=True, slots=True)
+class LessonStep:
+    step_id: str
+    title: str
+    test_node_ids: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class CheckpointReport:
     lesson_id: str
     starter_failures: tuple[str, ...]

@@ -56,3 +56,9 @@ def test_affine_rejects_incompatible_shapes() -> None:
             torch.ones((4, 3), dtype=torch.float64),
             torch.ones(4, dtype=torch.float32),
         )
+    with pytest.raises(ValueError, match="same device"):
+        affine(
+            torch.ones((2, 3), device="cpu"),
+            torch.ones((4, 3), device="meta"),
+            torch.ones(4, device="cpu"),
+        )

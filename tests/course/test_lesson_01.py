@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 from course.catalog import find_lesson
-from course.checkpoints import verify_checkpoint
+from course.checkpoints import load_steps, verify_checkpoint
 from course.models import LessonStatus
 from course.runner import run_benchmark
 
@@ -67,3 +67,46 @@ def test_lesson_01_concept_lab_runs_before_the_challenge(project_root: Path) -> 
     assert result.returncode == 0, result.stderr
     assert result.stderr == ""
     assert "Concept lab complete" in result.stdout
+
+
+def test_lesson_01_guided_chapter_runs_all_experiments(project_root: Path) -> None:
+    lesson = find_lesson(project_root, "01")
+    result = subprocess.run(
+        [sys.executable, str(lesson.path / "starter" / "guided_lab.py")],
+        cwd=project_root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stderr == ""
+    for section in (
+        "1/7 Tensors carry data and metadata",
+        "2/7 Shapes give dimensions meaning",
+        "3/7 Affine projection changes features",
+        "4/7 Devices decide where work happens",
+        "5/7 Seeds make an experiment repeatable",
+        "6/7 Inference mode removes training bookkeeping",
+        "7/7 Honest timing waits for completed work",
+    ):
+        assert section in result.stdout
+    assert "Guided lab complete" in result.stdout
+
+
+def test_lesson_01_has_small_ordered_steps_covering_every_starter_failure(
+    project_root: Path,
+) -> None:
+    lesson = find_lesson(project_root, "01")
+    steps = load_steps(lesson)
+    covered = tuple(node_id for step in steps for node_id in step.test_node_ids)
+    assert [step.step_id for step in steps] == [
+        "seed",
+        "cpu-policy",
+        "device-selection",
+        "affine-core",
+        "affine-contract",
+        "synchronize",
+        "benchmark",
+    ]
+    assert sorted(covered) == sorted(EXPECTED_STARTER_FAILURES)
+    assert len(covered) == len(set(covered))

@@ -32,7 +32,11 @@ class TimingStats:
 
 
 def synchronize(device: torch.device) -> None:
-    """Wait until work queued on the supported device has completed."""
+    """Wait until work queued on the supported device has completed.
+
+    This is chapter Step 6: CPU returns immediately, MPS calls
+    ``torch.mps.synchronize()``, and other device types are rejected.
+    """
     del device
     raise NotImplementedError("Synchronize CPU or MPS work")
 
@@ -44,6 +48,10 @@ def benchmark_operation(
     warmup: int = 3,
     iterations: int = 10,
 ) -> TimingStats:
-    """Warm up and collect synchronized wall-clock latency samples."""
+    """Warm up and collect synchronized wall-clock latency samples.
+
+    This is chapter Step 7. Guided experiment 7 shows the ordering for one
+    honest sample; repeat that ordering and retain every sample in milliseconds.
+    """
     del operation, device, warmup, iterations
     raise NotImplementedError("Measure synchronized operation latency")

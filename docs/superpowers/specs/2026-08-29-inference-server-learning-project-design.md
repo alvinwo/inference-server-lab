@@ -175,22 +175,30 @@ The CLI copies the starter, prints the goal and next command, runs the correct t
 
 ## 7. Repeating lesson contract
 
-Every lesson uses the same structure:
+Every lesson is a runnable chapter for a Python developer who may not know the new PyTorch or
+AI-infrastructure concept yet. It uses the same structure:
 
-1. **Scenario:** A concrete symptom, user need, or production-shaped failure.
-2. **Learning goals:** Three to five observable abilities.
-3. **Concept lab:** A 20–40 minute isolated experiment when the main challenge would otherwise introduce too many ideas at once.
-4. **Baseline:** A runnable command and expected output before any edits.
-5. **Challenge:** One primary mechanism with stable interfaces and constrained TODOs.
-6. **Tests:** Named acceptance criteria, including edge cases and invariants.
-7. **Measurement:** A profile, trace, counter, or before/after benchmark.
-8. **Tiered hints:** A conceptual hint, an interface hint, and a near-solution hint.
-9. **Reference solution:** Complete code plus a readable diff from the starter.
-10. **Engineering journal:** What was tried, why the final design was chosen, surprising results, and remaining limitations.
-11. **Industrial connection:** Specific concepts and source-reading pointers for vLLM and SGLang.
-12. **Stretch challenge:** Optional exploration that is never required by the next lesson.
+1. **Whole-system map:** Show where the lesson artifact sits in the inference-server data flow.
+2. **Motivation:** Begin with a concrete serving symptom, user need, or production failure.
+3. **Files and responsibilities:** Map every learner file to one purpose and later server role.
+4. **Guided experiments:** Interleave explanation with complete `# %%` code cells using the loop
+   predict → run → change → observe → explain. These examples contain no challenge blanks.
+5. **Concept summary:** State the small set of rules learners should retain.
+6. **Ordered implementation checkpoints:** Transfer one demonstrated idea at a time into the
+   production-shaped artifact. Each `checkpoint.toml` step has a name, purpose, concrete recipe,
+   focused test command, and exact success count.
+7. **Integration:** Run the complete test suite only after the small checkpoints.
+8. **Measurement:** Collect a profile, trace, counter, or before/after benchmark with metadata.
+9. **Explanation:** Use an engineering journal to explain mechanisms, choices, surprises, and
+   limitations in the learner's own words.
+10. **Reference solution:** Provide complete code plus reasoning notes for comparison after a real
+    attempt.
+11. **Industrial connection:** Point to specific vLLM and SGLang concepts and primary source.
+12. **Further exercises:** Offer optional exploration that no later lesson requires.
 
-Core challenges should take roughly 1–3 hours after the concept lab. Every lesson ends in a working checkpoint; no lesson ends with a half-integrated subsystem required merely to begin the next one.
+Core implementations should take roughly 1–3 hours after the guided chapter. Every lesson ends in
+a working checkpoint; no lesson ends with a half-integrated subsystem required merely to begin the
+next one.
 
 ## 8. Version 1 curriculum
 
